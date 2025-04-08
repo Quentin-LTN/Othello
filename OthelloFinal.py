@@ -74,67 +74,31 @@ class Board:
     # Or returns which pawns will change color if true
     # The returned list will contain [numbers_of_pawns_to_change, [direction_x, direction_y]]
     def is_legal_move(self, x_pos, y_pos, color):
+    if not self.is_tile_empty(x_pos, y_pos) or not self.is_on_board(x_pos, y_pos):
+        return False
 
-        # North / Nort-East / East / South-East / South / South-West / West / North-West
-        directions = [
-            [0, -1],
-            [1, -1],
-            [1, 0],
-            [1, 1],
-            [0, 1],
-            [-1, 1],
-            [-1, 0],
-            [-1, -1],
-        ]
+    directions = [
+        (0, -1), (1, -1), (1, 0), (1, 1),
+        (0, 1), (-1, 1), (-1, 0), (-1, -1)
+    ]
+    awaited_color = "⚫" if color == "⚪" else "⚪"
+    tiles_to_flip = []
 
-        # Opposite of the color of the placed pawn
-        if color == "⚪":
-            awaited_color = "⚫"
-        else:
-            awaited_color = "⚪"
+    for dx, dy in directions:
+        flip_count, current_x, current_y = 0, x_pos + dx, y_pos + dy
+        
+        while self.is_on_board(current_x, current_y):
+            tile = self.board[current_x + current_y * 8]
+            if tile.content != awaited_color:
+                if tile.content == color and flip_count > 0:
+                    tiles_to_flip.append([flip_count, [dx, dy]])
+                break
+                
+            flip_count += 1
+            current_x += dx
+            current_y += dy
 
-        current_x_pos = x_pos
-        current_y_pos = y_pos
-        is_legal = False
-        # [number_of_tile_to_flip, direction]
-        # Si on a un pion noir placé en 2,3, on veut:
-        # [[1, [1, 0]]
-        tiles_to_flip = []
-
-        if (not self.is_tile_empty(current_x_pos, current_y_pos) or not self.is_on_board(current_x_pos, current_y_pos)):
-            return False
-
-        # Check for every direction
-        for current_dir in directions:
-            number_of_tiles_to_flip = 1
-            # Get your original coordinates + the direction modifier
-            current_x_pos = x_pos + current_dir[0]
-            current_y_pos = y_pos + current_dir[1]
-            # Check if the new position is on the board and empty
-            if self.is_on_board(current_x_pos, current_y_pos):
-                #  Get the tile informations
-                current_index = self.board[current_x_pos + current_y_pos * 8]
-                # If the tile contains a pawn of the opposite color, continue on the line
-                while current_index.content == awaited_color:
-                    current_x_pos += current_dir[0]
-                    current_y_pos += current_dir[1]
-                    if self.is_on_board(current_x_pos, current_y_pos):
-                        current_index = self.board[current_x_pos +
-                                                   current_y_pos * 8]
-                        # If the line ends with a pawn of your color, then the move is legal
-                        if current_index.content == color:
-                            is_legal = True
-                            tiles_to_flip.append(
-                                [number_of_tiles_to_flip, current_dir])
-                            break
-                    else:
-                        break
-                    number_of_tiles_to_flip += 1
-
-        if is_legal:
-            return tiles_to_flip
-        else:
-            return False
+    return tiles_to_flip if tiles_to_flip else False
 
     # Takes a position (x_pos, y_pos), an array with a number of tiles to flip and a direction, and a color
     # The array should be obtained with the "is_legal_move" function
